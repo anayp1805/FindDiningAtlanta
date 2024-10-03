@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background-image: url("{% static 'restaurants/images/cutlery-near-twig-leaves.jpg' %}"); /* Ensure the correct path to your image */
+        background-size: cover; /* Cover the entire background */
+        background-position: center; /* Center the image */
+        height: 100vh; /* Full height of the viewport */
+        margin: 0; /* Remove default margin */
+    }
+
+    .blurcard {
+    background-image: url("{% static 'restaurants/images/homeImg.jpg' %}");
+    background-size: cover; /* Cover the entire background */
+    background-position: center; /* Center the image */
+    height: 50vh; /* Full height of the viewport */
+    margin: 0; /* Remove default margin */
+    }
+
+    .blur {
+        backdrop-filter: blur(1px); /* Increased blur strength */
+        background-color: rgba(255, 255, 255, 0.7); /* Darker semi-transparent background */
+        border-radius: 15px; /* Increased border radius */
+        padding: 2rem; /* Padding inside the blur box */
+    }
+
+    .card {
+        transition: transform 0.3s; /* Smooth hover transition */
+    }
+
+    .card:hover {
+        transform: scale(1.05); /* Slightly scale up on hover */
+    }
+
+    .restaurant-info {
+        margin-bottom: 1rem; /* Adding margin to restaurant info */
+    }
+
+    /* Button styles */
+    .btn-view {
+        background-color: white; /* Original button color */
+        color: black; /* Text color */
+        border: 1px solid black; /* Border */
+        transition: background-color 0.3s; /* Smooth transition for background color */
+    }
+
+    .btn-view:hover {
+        background-color: dimgrey; /* Grey on hover */
+        border: 1px solid white;
+        color: white;
+
+    }
+
+    /* Cuisine Card Styles */
+    .cuisine-card {
+        border-radius: 10px; /* Rounded corners */
+        overflow: hidden; /* Ensure content doesn't overflow */
+        position: relative; /* Positioning for overlay */
+        transition: transform 0.3s, background-color 0.3s; /* Transition for scaling and background color */
+        width: 100%; /* Full width of the column */
+        height: 0; /* Set height to 0 for square effect */
+        padding-bottom: 100%; /* 100% padding-bottom to maintain square aspect ratio */
+        background-color: rgba(255, 255, 255, 0.5); /* Light background */
+    }
+
+    .cuisine-card:hover {
+        transform: scale(1.05); /* Increase size on hover */
+        background-color: rgba(255, 255, 255, 0.8); /* Slightly darken background on hover */
+    }
+
+    .cuisine-card img {
+        position: absolute; /* Position absolutely within the card */
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* Cover the area */
+        transition: transform 0.3s; /* Smooth transition */
+    }
+
+    .cuisine-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5); /* Dark overlay */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 1; /* Show overlay by default */
+        transition: opacity 0.3s; /* Fade-in effect */
+    }
+
+    .cuisine-title {
+        color: white; /* Title color */
+        font-weight: bold; /* Bold title */
+        font-size: 1.5rem; /* Font size */
+        text-align: center; /* Center alignment */
+    }
+
+    .footer-default {
+        color: white; /* Default footer text color */
+    }
+</style>
+<br>
+<br>
+
+
+<div class="position-relative overflow-hidden p-3 p-md-5 m-md-3 text-center blur blurcard">
+    <div class="col-md-6 p-lg-5 mx-auto my-5">
+        <h1 class="display-3 fw-normal" style="color: white; font-family: Arial, sans-serif; text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5);">FindDining</h1>
+        <h3 class="fw-normal mb-3" style="color: white; font-family: Arial, sans-serif; text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2);">Here's to your next destination.</h3>
+        <div class="d-flex gap-3 justify-content-center lead fw-normal"></div>
+    </div>
+</div>
+
+
+<!-- For You Section -->
+{% if favorite_restaurants %}
+<div class="container mt-5">
+    <h2 class="text-center" style="color: white; text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5); margin-bottom: 2rem;"> Personalized Reccomendations for {{ user.first_name }}</h2>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+        {% for restaurant in favorite_restaurants %}
+        <div class="col">
+            <div class="card shadow-sm border-light">
+                <div class="fixed-image-container">
+                    <img src="{{ restaurant.photo_url }}" class="fixed-image card-img-top" alt="{{ restaurant.name }}">
+                </div>
+                <div class="card-body restaurant-info">
+                    <h5 class="card-title">{{ restaurant.name }}</h5>
+                    <p class="card-text">{{ restaurant.vicinity }}</p>
+                    <p class="card-text">
+                        <strong>Rating:</strong> {{ restaurant.rating }}
+                        <span class="star-icon">&#9733;</span> <!-- Star icon -->
+                    </p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="btn-group">
+                            <a href="{% url 'restaurant_details' restaurant.name %}" class="btn btn-sm btn-view">View</a> <!-- Updated button style -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Popular Cuisines Section -->
+<section class="container py-5">
+    <h2 class="text-3xl text-center font-bold text-white mb-4">Some Of Our Popular Cuisines!</h2> <!-- Adjusted margin-bottom -->
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+        <div class="col">
+            <div class="cuisine-card">
+                <img src="{% static 'restaurants/images/american.jpg' %}" alt="American Cuisine">
+                <div class="cuisine-overlay">
+                    <div class="cuisine-title">American</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="cuisine-card">
+                <img src="{% static 'restaurants/images/indian.jpg' %}" alt="Indian Cuisine">
+                <div class="cuisine-overlay">
+                    <div class="cuisine-title">Indian</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="cuisine-card">
+                <img src="{% static 'restaurants/images/mexican.jpg' %}" alt="Mexican Cuisine">
+                <div class="cuisine-overlay">
+                    <div class="cuisine-title">Mexican</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="cuisine-card">
+                <img src="{% static 'restaurants/images/chinese.jpg' %}" alt="Chinese Cuisine">
+                <div class="cuisine-overlay">
+                    <div class="cuisine-title">Chinese</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="cuisine-card">
+                <img src="{% static 'restaurants/images/thai.jpg' %}" alt="Thai Cuisine">
+                <div class="cuisine-overlay">
+                    <div class="cuisine-title">Thai</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="cuisine-card">
+                <img src="{% static 'restaurants/images/japanese.jpg' %}" alt="Japanese Cuisine">
+                <div class="cuisine-overlay">
+                    <div class="cuisine-title">Japanese</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="cuisine-card">
+                <img src="{% static 'restaurants/images/korean.jpg' %}" alt="Korean Cuisine">
+                <div class="cuisine-overlay">
+                    <div class="cuisine-title">Korean</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="cuisine-card">
+                <img src="{% static 'restaurants/images/mediterranean.jpg' %}" alt="Mediterranean Cuisine">
+                <div class="cuisine-overlay">
+                    <div class="cuisine-title">Mediterranean</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="cuisine-card">
+                <img src="{% static 'restaurants/images/italian.jpg' %}" alt="Italian Cuisine">
+                <div class="cuisine-overlay">
+                    <div class="cuisine-title">Italian</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% block footer %}
+<style>
+    .footer-default {
+        color: white; /* Change footer text color */
+    }
+    .footer-default a {
+        color: white; /* Change link color in the footer */
+    }
+</style>
+
+{% endblock %}
+
+{% endblock %}

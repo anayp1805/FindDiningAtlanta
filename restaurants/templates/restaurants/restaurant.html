@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Search</title>
+    <!-- Font Awesome for heart icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .restaurant-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative; /* Position for heart button */
+        }
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .gallery img {
+            width: 150px;
+            height: auto;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .error {
+            color: red;
+        }
+        .restaurant-details, .cuisine-restaurants {
+            margin-top: 20px;
+        }
+        .restaurant-details p, .cuisine-restaurants li {
+            margin: 5px 0;
+        }
+        .cuisine-restaurants ul {
+            list-style: none;
+            padding: 0;
+        }
+        .cuisine-restaurants li {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            position: relative; /* For absolute positioning of heart */
+        }
+        .heart-icon {
+            font-size: 24px;
+            color: white; /* White center */
+            border: 2px solid black; /* Black outline */
+            border-radius: 50%; /* Make it circular */
+            width: 30px; /* Set a fixed width */
+            height: 30px; /* Set a fixed height */
+            display: flex; /* Center icon */
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            cursor: pointer; /* Change cursor to pointer */
+        }
+        .heart-icon:hover {
+            color: red; /* Change color to red on hover */
+        }
+        .heart-icon.favorited {
+            color: red; /* Red when favorited */
+        }
+    </style>
+</head>
+<body>
+    <div class="restaurant-container">
+        <h1>Search for a Restaurant</h1>
+
+        <!-- User authentication check (this will depend on your backend setup) -->
+        {% if user.is_authenticated %}
+            <!-- Sample restaurant listing; replace with your dynamic rendering -->
+            <div class="cuisine-restaurants">
+                <ul>
+                    {% for restaurant in cuisine_restaurants %}
+                        <li>
+                            <h3>{{ restaurant.name }}</h3>
+                            <p><strong>Address:</strong> {{ restaurant.formatted_address }}</p>
+                            <p><strong>Rating:</strong> {{ restaurant.rating }} <i class="fas fa-star"></i> ({{ restaurant.user_ratings_total }} ratings)</p>
+                            <p><strong>Business Status:</strong> {{ restaurant.business_status }}</p>
+                            <p><strong>Price Level:</strong> {{ restaurant.price_level }}</p>
+                            <p><strong>Google Maps URL:</strong> <a href="https://maps.google.com/?q={{ restaurant.name|urlencode }}" target="_blank">View on Google Maps</a></p>
+                            <i class="fas fa-heart heart-icon" onclick="toggleFavorite(this)"></i> <!-- Heart icon with onclick event -->
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% else %}
+            <p>Please log in to like restaurants.</p>
+        {% endif %}
+    </div>
+
+    <script>
+        function toggleFavorite(element) {
+            element.classList.toggle('favorited'); // Toggle the favorited class
+            // Here you can add additional code to handle the favorite functionality,
+            // such as sending an AJAX request to save this favorite to the server
+        }
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+

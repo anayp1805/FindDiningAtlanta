@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ restaurant.name }} - Details{% endblock %}
+
+{% block content %}
+<style>
+    /* Custom style to reduce carousel height */
+    #photoCarousel .carousel-item {
+        height: 50vh; /* 50% of the viewport height */
+    }
+
+    #photoCarousel .carousel-item img {
+        height: 100%; /* Ensure image takes up full height */
+        object-fit: cover; /* Keep image aspect ratio and crop if necessary */
+    }
+
+    /* Style for carousel text overlay to make it stand out */
+    .carousel-caption {
+        background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+        padding: 20px;
+        border-radius: 10px;
+    }
+
+    .carousel-caption h1, .carousel-caption p {
+        color: #fff;
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7); /* Text shadow for better visibility */
+    }
+
+    /* Unified style for opening hours, price level, and business status */
+    .restaurant-info {
+        font-family: 'Arial', sans-serif; /* Consistent font for readability */
+        font-size: 1.1rem; /* Unified font size */
+    }
+
+    .restaurant-info h4 {
+        margin-bottom: 10px;
+        font-size: 1.3rem; /* Slightly larger font for section headers */
+    }
+
+    .opening-hours {
+        list-style-type: none;
+        padding-left: 0;
+    }
+
+    .opening-hours li {
+        margin-bottom: 5px;
+    }
+
+</style>
+
+<div class="container mt-5">
+    {% if restaurant %}
+        <!-- Carousel Section for Photos and Restaurant Info in Caption -->
+        <div id="photoCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+                {% for photo in photos %}
+                    <button type="button" data-bs-target="#photoCarousel" data-bs-slide-to="{{ forloop.counter0 }}" class="{% if forloop.first %}active{% endif %}" aria-current="{% if forloop.first %}true{% endif %}" aria-label="Slide {{ forloop.counter }}"></button>
+                {% endfor %}
+            </div>
+            <div class="carousel-inner">
+                {% for photo in photos %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        <img src="{{ photo }}" class="d-block w-100 rounded" alt="Restaurant Photo">
+                        <div class="carousel-caption d-none d-md-block">
+                            <h1 class="display-4">{{ restaurant.name }}</h1>
+                            <p class="lead">Rated {{ restaurant.rating }} / 5</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#photoCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#photoCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+
+        <!-- Restaurant Basic Info -->
+        <div class="text-center mb-5">
+            <p class="lead"><strong>Address:</strong> {{ restaurant.formatted_address }}</p>
+            <p class="lead"><strong>Phone:</strong> {{ restaurant.formatted_phone_number }}</p>
+            <p class="lead"><strong>Cuisine:</strong> <span id="cuisine">Loading...</span></p> <!-- Cuisine field -->
+        </div>
+
+        <!-- Restaurant Additional Info -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="restaurant-info">
+                    <h4>Opening Hours</h4>
+                    <ul class="opening-hours">
+                        {% if restaurant.opening_hours %}
+                            {% for day in restaurant.opening_hours.weekday_text %}
+                                <li>{{ day }}</li>
+                            {% endfor %}
+                        {% else %}
+                            <li>Not Available</li>
+                        {% endif %}
+                    </ul>
+                    <p><strong>Price Level:</strong>
+                        {% if restaurant.price_level %}
+                            {{ restaurant.price_level }}
+                        {% else %}
+                            Not Available
+                        {% endif %}
+                    </p>
+                    <p><strong>Business Status:</strong> {{ restaurant.business_status }}</p>
+                    <p><a href="{{ restaurant.website }}" target="_blank" class="btn btn-outline-primary">Visit Website</a></p>
+                </div>
+            </div>
+
+            <!-- Google Maps -->
+            <div class="col-md-6">
+                <h3>Location</h3>
+                <div id="map" style="height: 300px; width: 100%;"></div>
+            </div>
+            <h3>Google Reviews</h3>
+            {% if reviews %}
+                <div class="list-group">
+                    {% for review in reviews %}
+                        <div class="list-group-item mb-2">
+                            <h5 class="mb-1">{{ review.author_name }} - {{ review.rating }}/5</h5>
+                            <p class="mb-1">{{ review.text }}</p>
+                            <small>{{ review.time }}</small>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No reviews available.</p>
+            {% endif %}
+
+        </div>
+
+    {% else %}
+        <p class="text-center">Restaurant details not available.</p>
+    {% endif %}
+</div>
+
+<!-- JavaScript to Fetch Cuisine -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const restaurantName = "{{ restaurant.name }}";
+        const cuisineElement = document.getElementById('cuisine');
+
+        fetch(`/get-cuisine/${restaurantName}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.cuisine) {
+                    cuisineElement.textContent = data.cuisine;
+                } else {
+                    cuisineElement.textContent = 'Cuisine not available';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching cuisine:', error);
+                cuisineElement.textContent = 'Cuisine not available';
+            });
+    });
+</script>
+
+<!-- Google Maps Integration -->
+<script>
+    function initMap() {
+        var location = { lat: {{ restaurant.geometry.location.lat }}, lng: {{ restaurant.geometry.location.lng }} };
+        var map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 15,
+            center: location
+        });
+        var marker = new google.maps.Marker({
+            position: location,
+            map: map
+        });
+    }
+</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCqc613-d11926rxvX6oXwU2wYp3baIuP8&callback=initMap"></script>
+{% endblock %}

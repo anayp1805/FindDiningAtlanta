@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block title %}Restaurant List{% endblock %}
+
+{% block content %}
+
+
+
+<div class="container mt-5">
+    <div class="row">
+        <!-- Sidebar for sorting -->
+        <div class="col-md-3">
+            <h5>Sort By</h5>
+            <form id="sort-form" method="GET" action="{% url 'restaurant_list' %}">
+                <!-- Distance Slider -->
+                <div class="form-group mb-3">
+                    <label for="sort-distance">Distance (in km)</label>
+                    <input type="range" id="sort-distance" name="distance" min="0" max="50" value="{{ request.GET.distance|default:25 }}" class="form-range">
+                    <span id="distance-value">{{ request.GET.distance|default:25 }} km</span>
+                </div>
+
+                <!-- Rating Slider -->
+                <div class="form-group mb-3">
+                    <label for="sort-rating">Minimum Rating</label>
+                    <input type="range" id="sort-rating" name="rating" min="0" max="5" step="0.1" value="{{ request.GET.rating|default:3 }}" class="form-range">
+                    <span id="rating-value">{{ request.GET.rating|default:3 }} / 5</span>
+                </div>
+            </form>
+        </div>
+
+        <!-- Restaurant list -->
+        <div class="col-md-9">
+            <div class="row justify-content-center" id="restaurant-list">
+                {% if restaurants %}
+                    {% for restaurant in restaurants %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            {% if restaurant.images %}
+                                <img src="{{ restaurant.images.0 }}" alt="Restaurant Image" class="card-img-top restaurant-image">
+                            {% endif %}
+
+                            <div class="card-body">
+                                <h5 class="card-title">{{ restaurant.name }}</h5>
+                                <p class="card-text"><strong>Rating:</strong> {{ restaurant.rating }} / 5</p>
+                                <p class="card-text"><strong>Address:</strong> {{ restaurant.address }}</p>
+                                <div class="btn-group">
+                                    <a href="{% url 'restaurant_details' restaurant.name %}" class="btn btn-sm btn-outline-secondary">
+                                        View
+                                    </a>
+                                    {% if request.user.is_authenticated %}
+                                        <a href="{% url 'like_restaurant' restaurant.name restaurant.address %}"
+                                           class="btn btn-sm {% if restaurant.name in user_favorites %}btn-like{% else %}btn-outline-primary{% endif %}">
+                                            {% if restaurant.name in user_favorites %}
+                                                Unlike
+                                            {% else %}
+                                                Like
+                                            {% endif %}
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No restaurants found. Enable geolocation to view nearby restaurants.</p>
+                    <button id="reload-location" class="btn btn-primary mt-3">Reload Location</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-submit form when sliders are changed
+    document.addEventListener("DOMContentLoaded", function() {
+        const sortForm = document.getElementById('sort-form');
+        const distanceSlider = document.getElementById('sort-distance');
+        const ratingSlider = document.getElementById('sort-rating');
+        const distanceValue = document.getElementById('distance-value');
+        const ratingValue = document.getElementById('rating-value');
+
+        // Update distance display when slider is adjusted
+        distanceSlider.addEventListener('input', function() {
+            distanceValue.textContent = distanceSlider.value + " km";
+        });
+
+        // Update rating display when slider is adjusted
+        ratingSlider.addEventListener('input', function() {
+            ratingValue.textContent = ratingSlider.value + " / 5";
+        });
+
+        // Automatically submit the form when sliders are changed
+        [distanceSlider, ratingSlider].forEach(field => {
+            field.addEventListener('change', function() {
+                sortForm.submit();
+            });
+        });
+
+        // Check if location was already stored in sessionStorage
+        const lat = sessionStorage.getItem('lat');
+        const lng = sessionStorage.getItem('lng');
+
+        if (!lat || !lng) {
+            console.log("Location not found in sessionStorage. Fetching location...");
+            getLocationAndSend();  // Fetch the location if not stored
+        } else {
+            console.log("Location found in sessionStorage:", lat, lng);
+            sendLocationToServer({ coords: { latitude: lat, longitude: lng } });
+        }
+
+        const reloadButton = document.getElementById('reload-location');
+        if (reloadButton) {
+            reloadButton.addEventListener('click', function() {
+                // Clear session storage to force location reload
+                sessionStorage.removeItem('lat');
+                sessionStorage.removeItem('lng');
+                sessionStorage.removeItem('locationSent');
+                sessionStorage.removeItem('locationAllowed');
+
+                // Fetch the current location again and submit it to the server
+                getLocationAndSend();
+            });
+        }
+    });
+
+    function getLocationAndSend() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(sendLocationToServer, handleError, {
+                enableHighAccuracy: true,
+                timeout: 10000,  // Timeout after 10 seconds
+                maximumAge: 60000  // Cache for 60 seconds
+            });
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+    }
+
+    function sendLocationToServer(position) {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        console.log("Location fetched:", lat, lng);
+
+        // Store location in sessionStorage
+        sessionStorage.setItem('lat', lat);
+        sessionStorage.setItem('lng', lng);
+        sessionStorage.setItem('locationAllowed', true);
+
+        if (!sessionStorage.getItem('locationSent')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = "{% url 'restaurant_list' %}";
+
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = 'csrfmiddlewaretoken';
+            csrfToken.value = '{{ csrf_token }}';
+            form.appendChild(csrfToken);
+
+            const latInput = document.createElement('input');
+            latInput.type = 'hidden';
+            latInput.name = 'lat';
+            latInput.value = lat;
+            form.appendChild(latInput);
+
+            const lngInput = document.createElement('input');
+            lngInput.type = 'hidden';
+            lngInput.name = 'lng';
+            lngInput.value = lng;
+            form.appendChild(lngInput);
+
+            sessionStorage.setItem('locationSent', true);
+            console.log("Submitting location to server:", lat, lng);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+
+    function handleError(error) {
+        console.error("Error getting location:", error.message);
+        alert("Error getting location: " + error.message);
+
+        // Optionally, retry getting the location
+        setTimeout(getLocationAndSend, 5000);  // Retry after 5 seconds
+    }
+</script>
+
+{% endblock %}

@@ -1,0 +1,19 @@
+.fixed-image-container {
+    width: 100%;
+    height: 225px; /* Fixed height for all images */
+    overflow: hidden;
+    position: relative;
+}
+
+.fixed-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensures the image covers the container while maintaining aspect ratio */
+    object-position: center; /* Centers the image within the container */
+    display: block; /* Ensures no extra spaces */
+}
+.restaurant-image {
+    width: 100% !important;
+    height: 200px !important;
+    object-fit: cover !important;
+}
